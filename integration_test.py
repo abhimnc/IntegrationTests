@@ -36,15 +36,19 @@ class IntegrationTest(unittest.TestCase):
 		#Adafruit_BluefruitLE.get_provider().run_mainloop_with(self.runTest_MainLoop)
 		self.runTest_MainLoop()
 
+
 	def runTest_startUART(self):
 		uartPort = list(serial.tools.list_ports.comports())[0]
 		self.uartSerial = serial.Serial(uartPort.device, 115200, timeout=1)
+
 
 		def uartRXTarget():
 			while True:
 				# Some slight implicit control flow going on here:
 				#   uartSerial.readline() will sometimes timeout, and then we'll just loop around.
+
 				rx_data = self.uartSerial.readline()
+
 				if rx_data:
 					# We truncate the ending newline. 
 					self.onUartLineRx(rx_data[:-1])

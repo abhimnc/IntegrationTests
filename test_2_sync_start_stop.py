@@ -11,8 +11,8 @@ class SyncStartStopTestCase(IntegrationTest):
 		# Check that badge now has correct time.
 		status = badge.get_status()
 		logger.info("Status after time set: {}".format(status))
-		# FIRMWARE BUG: Badge time is always off by four seconds. (Why?) //not passed don't know why
-		#self.assertAlmostEqual(status.timestamp_seconds, time.time(), delta=1)
+		# FIRMWARE BUG: Badge time is always off by four seconds. (Why?) 
+		self.assertAlmostEqual(status.timestamp_seconds, time.time(), delta=1)
 
 		# Start collector, check that status changes.
 		badge.start_recording()

@@ -52,9 +52,6 @@ class SimpleDelegate(DefaultDelegate):
 
 
 
-
-
-
 # BLEBadgeConnection represents a connection to 'ble_device', a badge connected over BLE.
 #    ('ble_device' should be a device from the Bluefruit Library)
 # This class implements the BadgeConnection interface to communicate with
@@ -123,18 +120,18 @@ class BLEBadgeConnection(BadgeConnection):
 
 	def received(self,data):
 		logger.debug("Recieved {}".format(data.encode("hex")))
-		self.rx_buffer += data
-		if len(self.rx_buffer) >= self.rx_bytes_expected:
-			self.on_message_rx(self.rx_buffer[0:self.rx_bytes_expected])
-			self.rx_buffer = self.rx_buffer[self.rx_bytes_expected:]
-			self.rx_bytes_expected = 0
+		self.rx_message = data
+		#if len(self.rx_buffer) >= self.rx_bytes_expected:
+			#self.on_message_rx(self.rx_buffer[0:self.rx_bytes_expected])
+			#self.rx_buffer = self.rx_buffer[self.rx_bytes_expected:]
+			#self.rx_bytes_expected = 0
 
 
 	# Implements BadgeConnection's connect() spec.	
 	def connect(self):
 		#self.ble_device.connect()
 		#print(self.ble_device)
-		conn = btle.Peripheral(self.ble_device, btle.ADDR_TYPE_RANDOM)
+		self.conn = btle.Peripheral(self.ble_device, btle.ADDR_TYPE_RANDOM)
 		
 		logger.debug("Attempting to discover characteristics...")
 
@@ -142,7 +139,7 @@ class BLEBadgeConnection(BadgeConnection):
 		#conn = btle.Peripheral(self.ble_device, btle.ADDR_TYPE_RANDOM)
 
 		# Find the UART service and its characteristics.
-		self.uart = conn.getServiceByUUID(UART_SERVICE_UUID)
+		self.uart = self.conn.getServiceByUUID(UART_SERVICE_UUID)
 		self.rx = self.uart.getCharacteristics(RX_CHAR_UUID)[0]
 		self.tx = self.uart.getCharacteristics(TX_CHAR_UUID)[0]
 
@@ -154,8 +151,8 @@ class BLEBadgeConnection(BadgeConnection):
 		#self.rx.write(struct.pack('<bb',0x01,0x00)) # doesn't work. not sure why
 		#conn.writeCharacteristic(handle=self.rx.getHandle(),val=struct.pack('<bb', 0x00, 0x00))
 		CONFIG_HANDLE = 0x000c;
-		conn.writeCharacteristic(handle=CONFIG_HANDLE,val=struct.pack('<bb', 0x01, 0x00))
-		conn.setDelegate(SimpleDelegate(bleconn=self))
+		self.conn.writeCharacteristic(handle=CONFIG_HANDLE,val=struct.pack('<bb', 0x01, 0x00))
+		self.conn.setDelegate(SimpleDelegate(bleconn=self))
 
 		#conn.waitForNotifications(1.0)
 
@@ -165,7 +162,7 @@ class BLEBadgeConnection(BadgeConnection):
 		# A sleep here will suffice, but if I'm super nice I oughta submit a PR to them to fix that for them.
 		#import time
 		#time.sleep(1)
-		self.conn = conn
+		#self.conn = conn
 
 
 	# Implements BadgeConnections's disconnect() spec.
@@ -226,17 +223,14 @@ class BLEBadgeConnection(BadgeConnection):
 
 	# Internal method called when a full message has been recieved from the badge. 
 	# Notifies anyone waiting on data from the badge that the recieved message is ready.
-	def on_message_rx(self, message):
-		self.rx_message = message
+	#def on_message_rx(self, message):
+	#	self.rx_message = message
+	#	self.received(self.rx_message)
 
 
 		#if message > 0:
 		#	self.conn.waitForNotifications(5.0)
-
-		
-
-
-		with self.rx_condition:
-			#self.rx.waitForNotifications(5.0)
-			time.sleep(1)
-			self.rx_condition.notifyAll()
+		#with self.rx_condition:
+		#	#self.rx.waitForNotifications(5.0)
+		#	time.sleep(1)
+		#	self.rx_condition.notifyAll()
