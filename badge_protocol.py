@@ -79,6 +79,7 @@ class BadgeMessage(object):
 	@classmethod
 	def deserialize_message(cls, serialized_message):
 		message_attributes = {}
+		print(serialized_message, "serialized_message in deserialize_message")
 
 		pos = 0
 		for attribute, length, optional, serializer, parser in cls.message_fields:

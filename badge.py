@@ -49,9 +49,11 @@ class OpenBadge(object):
 	# of class `response_type` that is a subclass of BadgeMessage, or None if no response is expected.
 	def send_command(self, command_message, response_type):
 		expected_response_length = response_type.length() if response_type else 0
+		print(command_message, "print command message")
 		serialized_command = command_message.serialize_message()
 		logger.debug("Sending: {}, Raw: {}".format(command_message, serialized_command.encode("hex")))
 		serialized_response = self.connection.send(serialized_command, response_len=expected_response_length)
+		
 
 
 		if expected_response_length > 0:
@@ -72,6 +74,7 @@ class OpenBadge(object):
 		if timestamp_miliseconds == None: timestamp_miliseconds = get_timestamp_miliseconds()
 
 		status_request = StatusRequest(timestamp_seconds, timestamp_miliseconds, badge_id=new_id, group_number=new_group_number)
+
 
 
 		return self.send_command(status_request, StatusResponse)
@@ -146,6 +149,7 @@ class OpenBadge(object):
 			chunks_and_headers.append((header, map(ord, data)))
 
 			serialized_header = self.connection.await_data(MicrophoneDataHeader.length())
+
 			header = MicrophoneDataHeader.deserialize_message(serialized_header)
 
 		return chunks_and_headers
