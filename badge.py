@@ -49,7 +49,6 @@ class OpenBadge(object):
 	# of class `response_type` that is a subclass of BadgeMessage, or None if no response is expected.
 	def send_command(self, command_message, response_type):
 		expected_response_length = response_type.length() if response_type else 0
-		print(command_message, "print command message")
 		serialized_command = command_message.serialize_message()
 		logger.debug("Sending: {}, Raw: {}".format(command_message, serialized_command.encode("hex")))
 		serialized_response = self.connection.send(serialized_command, response_len=expected_response_length)
@@ -145,6 +144,7 @@ class OpenBadge(object):
 			bytes_awaited = header.num_samples_in_chunk
 			logger.debug("Awaiting {} bytes.".format(bytes_awaited))
 			data = self.connection.await_data(bytes_awaited)
+			
 
 			chunks_and_headers.append((header, map(ord, data)))
 

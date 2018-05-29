@@ -11,8 +11,6 @@ import uuid
 import sys
 import threading
 
-#import Adafruit_BluefruitLE
-#from platform import *
 from bluepy import *
 from bluepy import btle
 from bluepy.btle import UUID, Peripheral, DefaultDelegate, AssignedNumbers ,Scanner
@@ -48,8 +46,7 @@ class SimpleDelegate(DefaultDelegate):
 
     def handleNotification(self, cHandle, data):
         print(repr(data))
-        print(data,"bbbbbbbbbbbbbbbbbbbbbbbb")
-        #self.bleconn.send(data,len(data))
+        self.bleconn.received(data)
 
 
 
@@ -90,42 +87,28 @@ class BLEBadgeConnection(BadgeConnection):
 	@classmethod
 	def get_connection_to_badge(cls, device_addr, timeout_seconds=10.0):
 		
-		#scanner = Scanner().withDelegate(ScanDelegate())
-		#devices = scanner.scan(timeout_seconds)
-
-		#for dev in devices:
-		#	if (dev.addr==device_addr):
-		#		print(dev.addr,"is found!")
 		return cls(device_addr)
+
 
 	# Function to receive RX characteristic changes.  Note that this will
 	# be called on a different thread so be careful to make sure state that
 	# the function changes is thread safe.  Use Queue or other thread-safe
 	# primitives to send data to other threads.
-	#def received(self,data):
-	#	logger.debug("Recieved {}".format(data.encode("hex")))
-	#	self.rx_buffer += data
-	#	print(len(self.rx_buffer) , "length of rx_buffer")
-	#	print(self.rx_bytes_expected , "length of rx_bytes_expected")
-	#	if len(self.rx_buffer) >= self.rx_bytes_expected:
-	#		self.on_message_rx(self.rx_buffer[0:self.rx_bytes_expected])
-	#		self.rx_buffer = self.rx_buffer[self.rx_bytes_expected:]
-			#self.rx_bytes_expected = 0
 
-			#if len(self.rx_buffer) > 0:
-			#	logger.debug("RX Buffer: {}".format(self.rx_buffer.encode("hex")))
-			#	raise BufferError("Got unexcpeted rx bytes.")
+	def received(self,data):
+		logger.debug("Recieved {}".format(data.encode("hex")))
+		self.rx_buffer += data
+
+		if len(self.rx_buffer) >= self.rx_bytes_expected:
+			self.rx_message = self.rx_buffer[0:self.rx_bytes_expected]
+			#print(self.rx_message,"messsssssssssssssssssssssssssssssaaaaa")
+			self.rx_buffer = self.rx_buffer[self.rx_bytes_expected:]
+			self.rx_bytes_expected = 0
 
 
-	#def received(self,data):
-	#	logger.debug("Recieved {}".format(data.encode("hex")))
-	#	self.rx_message = data
-
-		#if len(self.rx_buffer) >= self.rx_bytes_expected:
 			#self.on_message_rx(self.rx_buffer[0:self.rx_bytes_expected])
 			#self.rx_buffer = self.rx_buffer[self.rx_bytes_expected:]
 			#self.rx_bytes_expected = 0
-
 
 	# Implements BadgeConnection's connect() spec.	
 	def connect(self):
@@ -153,16 +136,6 @@ class BLEBadgeConnection(BadgeConnection):
 		CONFIG_HANDLE = 0x000c;
 		self.conn.writeCharacteristic(handle=CONFIG_HANDLE,val=struct.pack('<bb', 0x01, 0x00))
 		self.conn.setDelegate(SimpleDelegate(bleconn=self))
-
-		#conn.waitForNotifications(1.0)
-
-
-		# Adafruit's PyOBJ bindings have a race condition in them, where they set the notification state 
-		# but don't wait for the notification state to actually change before writing things.
-		# A sleep here will suffice, but if I'm super nice I oughta submit a PR to them to fix that for them.
-		#import time
-		#time.sleep(1)
-		#self.conn = conn
 
 
 	# Implements BadgeConnections's disconnect() spec.
@@ -195,16 +168,14 @@ class BLEBadgeConnection(BadgeConnection):
 			raise RuntimeError("BLEBadgeConnection not connected before await_data()!")
 
 		self.rx_bytes_expected = data_len
+		self.rx_message = None
 
 		if data_len > 0:
-			print(data_len, "data_len in await")
-			#self.conn.waitForNotifications(5.0)
-			self.rx_message = self.rx.read()
-			#self.rx_condition.acquire()
-			#with self.rx_condition:
-				#self.rx_condition.wait()
-			#self.rx_condition.notify()
+			while(self.rx_message is None):
+				self.conn.waitForNotifications(5.0)
+
 			return self.rx_message
+			
 
 	# Implements BadgeConnection's send() spec.
 	def send(self, message, response_len=0):
@@ -212,24 +183,12 @@ class BLEBadgeConnection(BadgeConnection):
 			raise RuntimeError("BLEBadgeConnection not connected before send()!")
 
 		self.rx_bytes_expected = response_len
+		self.rx_message = None
+
 		self.tx.write(message,withResponse=True)
 
-		print(response_len,"response_len in send")
-		if response_len > 0:			
-			self.rx_message = self.rx.read()
+		if response_len > 0:
+			while(self.rx_message is None):
+				self.conn.waitForNotifications(5.0)
+
 			return self.rx_message
-
-			#with self.rx_condition:
-			#	self.rx_condition.wait(5.0)
-	
-			
-
-	# Internal method called when a full message has been recieved from the badge. 
-	# Notifies anyone waiting on data from the badge that the recieved message is ready.
-	#def on_message_rx(self, message):
-	#	self.rx_message = message
-
-	#	with self.rx_condition:
-			
-	#		time.sleep(1)
-	#		self.rx_condition.notifyAll()

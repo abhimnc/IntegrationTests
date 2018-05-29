@@ -72,6 +72,8 @@ class BadgeMessage(object):
 			if hasattr(self, attribute):
 				serialized_message += serializer(getattr(self, attribute))
 
+
+
 		return serialized_message
 
 	# Returns an instance of the given derived class 'cls' of BadgeMessage initialized from the
@@ -79,7 +81,6 @@ class BadgeMessage(object):
 	@classmethod
 	def deserialize_message(cls, serialized_message):
 		message_attributes = {}
-		print(serialized_message, "serialized_message in deserialize_message")
 
 		pos = 0
 		for attribute, length, optional, serializer, parser in cls.message_fields:
